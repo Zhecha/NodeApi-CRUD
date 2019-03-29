@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from "typeorm";
 import { File } from "./File";
+import { type } from "os";
 
 @Entity()
 export class Folder {
@@ -13,7 +14,12 @@ export class Folder {
     @Column()
     status: string;
 
-    @ManyToMany(type => File, file => file.folders)
-    @JoinTable()
+    @Column()
+    date: string;
+
+    @OneToMany(type => File, file => file.folder, {
+        cascade: true,
+        eager: true
+    })
     files: File[];
 }

@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable } from "typeorm";
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from "typeorm";
 import { Folder } from "./Folder";
+import { type } from "os";
 
 @Entity()
 export class File {
@@ -13,7 +14,14 @@ export class File {
     @Column()
     status: string;
 
-    @ManyToMany(type => Folder, folder => folder.files)
-    folders: Folder[];
+    @Column()
+    type: string;
+
+    @Column()
+    date: string;
+
+    @ManyToOne(type => Folder, folder => folder.files, { onDelete: 'CASCADE' })
+    @JoinColumn()
+    folder: Folder;
 
 }

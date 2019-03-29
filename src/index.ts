@@ -6,14 +6,15 @@ import {Request, Response} from "express";
 import {Routes} from "./routes";
 import {File} from "./entity/File";
 import {Folder} from "./entity/Folder";
+import {config} from "../config/config";
 
 createConnection({
     type: "postgres",
-    host: "localhost",
-    port: 5432,
-    username: "postgres",
-    password: "test",
-    database: "postgres",
+    host: config.host,
+    port: config.portDB,
+    username: config.usernameDB,
+    password: config.passwordDB,
+    database: config.database,
     entities: [
         __dirname + "/entity/*.ts"
     ],
@@ -37,11 +38,8 @@ createConnection({
         });
     });
 
-    // setup express app here
-    // ...
+    app.listen(config.port);
 
-    app.listen(3000);
-
-    console.log("Express server has started on port 3000. Open http://localhost:3000/users to see results");
+    console.log("Express server has started on port 3000");
 
 }).catch(error => console.log(error));

@@ -1,33 +1,64 @@
 import {FolderController} from "./controller/FolderController";
+import { FileController } from "./controller/FileController";
 
 export const Routes = [{
     method: "get",
-    route: "/getFolders",
+    route: "/api/v1/folders",
     controller: FolderController,
-    action: "allFoldersRootDirectory"
+    action: "readFolders"
 }, {
     method: "get",
-    route: "/getFoldersInFirstLevel",
+    route: "/api/v1/folders/:foldersId",
     controller: FolderController,
-    action: "getFoldersInFirstLevel"
+    action: "readFolder"
 }, {
-    method: "post",
-    route: "/createFolders",
+    method: "get",
+    route: "/api/v1/folders/:foldersId/resources",
     controller: FolderController,
-    action: "saveAndCreateFolders"
+    action: "readFolderResourse"
 }, {
-    method: "delete",
-    route: "/deleteFolders",
+    method: "post", 
+    route: "/api/v1/folders",
     controller: FolderController,
-    action: "removeFolders"
+    action: "createFolders"
 }, {
-    method: 'get',
-    route: '/getFoldersWithIndentidications',
+    method: "delete", 
+    route: "/api/v1/folders/:foldersId",
     controller: FolderController,
-    action: 'getFoldersWithIndentidications'
+    action: "deleteFolder"
 }, {
-    method: 'put',
-    route: '/renameFolder',
+    method: 'put', 
+    route: '/api/v1/folders/:foldersId',
     controller: FolderController,
     action: 'renameFolder'
+}, {
+    method: 'post',
+    route: '/api/v1/folders/:foldersId/files',
+    controller: FileController,
+    action: 'createFile'
+}, {
+    method: 'get',
+    route: '/api/v1/folders/:foldersId/files',
+    controller: FileController,
+    action: 'readFiles'
+}, {
+    method: 'get',
+    route: '/api/v1/folders/:foldersId/files/:filesId',
+    controller: FileController,
+    action: 'readFile'
+}, {
+    method: 'delete',
+    route: '/api/v1/folders/:foldersId/files/:filesId',
+    controller: FileController,
+    action: 'deleteFile'
+}, {
+    method: 'delete',
+    route: '/api/v1/folders/:foldersId/files',
+    controller: FileController,
+    action: 'deleteFiles'
+}, {
+    method: 'put',
+    route: '/api/v1/folders/:foldersId/files/:filesId',
+    controller: FileController,
+    action: 'renameFile'
 }];
