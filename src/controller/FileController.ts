@@ -162,8 +162,8 @@ export class FileController {
         if( folder !== undefined){
             let children = await this.folderTreeRepository.findDescendantsTree(folder);
             if( (children.files.length === 0) && (children.childFolders.length === 0)){
-                response.status(404).json({
-                    message: 'Children don\'t exsits'
+                response.json({
+                    data: []
                 });
                 return;
             };
@@ -198,8 +198,8 @@ export class FileController {
             return;
         }
         if(files.length === 0){
-            response.status(404).json({
-                message: 'File\'s don\'t exist'
+            response.json({
+                data:[]
             });
             return;
         }
