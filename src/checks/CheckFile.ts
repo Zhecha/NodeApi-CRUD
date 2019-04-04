@@ -12,3 +12,7 @@ export const FilterFile = Joi.object().keys({
 export const SortResources = Joi.object().keys({
     sortBy: Joi.string().valid("-date","+date").required()
 });
+
+export const TypeResource = Joi.object().keys({
+    type: Joi.string().valid("folder").required()
+});

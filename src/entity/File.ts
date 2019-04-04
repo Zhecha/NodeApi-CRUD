@@ -20,8 +20,7 @@ export class File {
     @Column()
     date: string;
 
-    @ManyToOne(type => Folder, folder => folder.files, { onDelete: 'CASCADE' })
+    @ManyToOne(type => Folder, folder => folder.files, { onDelete:"CASCADE" })
     @JoinColumn()
     folder: Folder;
-
 }
