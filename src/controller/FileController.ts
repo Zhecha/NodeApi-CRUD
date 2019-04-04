@@ -43,7 +43,7 @@ export class FileController {
                 for (let i = 0; i < files.length; i++){
                     for(let j = 0; j < request.files.length; j++){
                         if(files[i].fileName === request.files[j].originalname){
-                            response.status(403).json({
+                            response.status(409).json({
                                 message: 'File already exist'
                             });
                             return;
@@ -94,7 +94,7 @@ export class FileController {
         if(request.body.length !== undefined){
             typeEntity.type = request.body.type;
             if(!checkType(typeEntity,response)){
-                response.status(401).json({
+                response.status(400).json({
                     message: "Invalid request data"
                 });
                 return;
@@ -211,7 +211,7 @@ export class FileController {
         if(flagExistFile){
             for(let i = 0; i < files.length; i++){
                 if(files[i].fileName === (request.body.fileName + path.extname(file.fileName))){
-                    response.status(403).json({
+                    response.status(409).json({
                         message: 'File with this name exist'
                     })
                     return;
@@ -238,7 +238,7 @@ export class FileController {
                 }
             }
         } else {
-            response.json({
+            response.status(404).json({
                 message: 'File not found'
             });
             return;
