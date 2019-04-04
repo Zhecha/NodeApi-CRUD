@@ -29,8 +29,7 @@ export class FolderController {
         if((request.query.offset == undefined) && ( request.query.limit == undefined)){
             const folders =  await this.folderRepository.find();
             if( folders.length === 0){
-                response.status(404).json({
-                    message: 'Folders doesn\'t exist',
+                response.json({
                     data: []
                 });
                 return;
@@ -41,8 +40,7 @@ export class FolderController {
             request.query.offset = Number(request.query.offset);
             const folders =  await this.folderRepository.find({skip: request.query.offset});
             if( folders.length === 0){
-                response.status(404).json({
-                    message: 'Folders doesn\'t exist',
+                response.json({
                     data: []
                 });
                 return;
@@ -53,8 +51,8 @@ export class FolderController {
             request.query.limit = Number(request.query.limit);
             const folders =  await this.folderRepository.find({take: request.query.limit});
             if( folders.length === 0){
-                response.status(404).json({
-                    message: 'Folders doesn\'t exist'
+                response.json({
+                    data: []
                 });
                 return;
             }
@@ -64,8 +62,8 @@ export class FolderController {
         request.query.limit = Number(request.query.limit);
         const folders =  await this.folderRepository.find({skip: request.query.offset,take: request.query.limit});
         if( folders.length === 0){
-            response.status(404).json({
-                message: 'Folders doesn\'t exist'
+            response.json({
+                data: []
             });
             return;
         };
@@ -153,7 +151,7 @@ export class FolderController {
                             self.folderRepository.remove(elem);
                         }
                     });
-                    response.status(200).json({
+                    response.status(204).json({
                         message: 'Folder deleted',
                     });
         } else {
@@ -197,8 +195,8 @@ export class FolderController {
                 }
             }
             if( filesArray.length === 0){
-                response.status(404).json({
-                    message: 'Files with this type doesn\'t exist'
+                response.json({
+                    data:[]
                 });
                 return ;
             }
@@ -208,8 +206,8 @@ export class FolderController {
                 request.query.offset = Number(request.query.offset);
                 arr.splice(0,request.query.offset);
                 if( arr.length === 0){
-                    response.status(404).json({
-                        message: 'Resources doesn\'t exist'
+                    response.json({
+                        data:[]
                     });
                     return ; 
                 }
@@ -225,8 +223,8 @@ export class FolderController {
             arr.splice(0,request.query.offset);
             arr = arr.slice(0,request.query.limit);
             if( arr.length === 0){
-                response.status(404).json({
-                    message: 'Resources doesn\'t exist'
+                response.json({
+                    data:[]
                 });
                 return ;
             };
@@ -247,8 +245,8 @@ export class FolderController {
             if( folder !== undefined){
                 let children = await this.folderTreeRepository.findDescendantsTree(folder);
                 if( (children.files.length === 0) && (children.childFolders.length === 0)){
-                    response.status(404).json({
-                        message: 'Children don\'t exsits'
+                    response.json({
+                        data:[]
                     });
                     return;
                 };
@@ -279,8 +277,8 @@ export class FolderController {
             if( folder !== undefined){
                 let children = await this.folderTreeRepository.findDescendantsTree(folder);
                 if( (children.files.length === 0) && (children.childFolders.length === 0)){
-                    response.status(404).json({
-                        message: 'Children don\'t exsits'
+                    response.json({
+                        data:[]
                     });
                     return;
                 };
