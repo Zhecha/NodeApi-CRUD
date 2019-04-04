@@ -23,5 +23,4 @@ export class File {
     @ManyToOne(type => Folder, folder => folder.files, { onDelete:"CASCADE" })
     @JoinColumn()
     folder: Folder;
-
 }

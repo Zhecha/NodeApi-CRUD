@@ -324,7 +324,4 @@ export class FolderController {
         }
 
     }
-
-    
-
 }

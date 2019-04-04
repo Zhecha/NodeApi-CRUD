@@ -1,6 +1,5 @@
 import { Entity,Tree, Column, PrimaryGeneratedColumn, OneToMany,TreeChildren, TreeParent, TreeLevelColumn } from "typeorm";
 import { File } from "./File";
-import { type } from "os";
 
 @Entity()
 @Tree("nested-set")
