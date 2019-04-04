@@ -34,7 +34,7 @@ export class FileController {
 
         upload(request,response,function(err) {
             if(err) {
-                response.status(403).json({
+                response.status(400).json({
                     message: "Error uploading file"
                 });
                 return;
