@@ -1,9 +1,9 @@
-import {getRepository, Index} from "typeorm";
+import {getRepository, Index, getManager} from "typeorm";
 import {NextFunction, Request, Response} from "express";
 import {Folder} from "../entity/Folder";
 import * as fs from "fs";
 import * as path from "path";
-import {checkFoldersSchema, checkSortResources, checkRenameFolder, checkExpandResources, checkLimit, checkOffset} from '../checks/Validate';
+import {checkFoldersSchema, checkSortResources, checkRenameFolder, checkExpandResources, checkLimit, checkOffset,checkFilterFile} from '../checks/Validate';
 import { File } from "../entity/File";
 const Joi = require('joi');
 import {config} from "../../config/config";
@@ -13,27 +13,7 @@ export class FolderController {
     
     private folderRepository = getRepository(Folder);
     private fileRepository = getRepository(File);
-
-    async mkdir(pathstr: String, root) {
-
-        var dirs = pathstr.split('/');
-        var dir = dirs.shift();
-        root = (root || '') + dir + "/";
-        const folder = await this.folderRepository.findOne({folderName: root.slice(0,root.length-1)})
-        try {
-            if( folder === undefined ) {
-                const folder = new Folder();
-                folder.folderName = root.slice(0,root.length-1);
-                folder.status = "Created";
-                folder.date = Date.now().toLocaleString();
-                this.folderRepository.save(folder);
-            }
-        }
-        catch (e) {
-            return new Error(e);
-        }
-        return !dirs.length || this.mkdir(dirs.join('/'), root);
-    }
+    private folderTreeRepository = getManager().getTreeRepository(Folder);
 
     async readFolders(request: Request, response: Response, next: NextFunction) {
         let offsetObj = {offset: 0};
@@ -49,8 +29,9 @@ export class FolderController {
         if((request.query.offset == undefined) && ( request.query.limit == undefined)){
             const folders =  await this.folderRepository.find();
             if( folders.length === 0){
-                response.status(404).json({
-                    message: 'Folders doesn\'t exist'
+                response.json({
+                    message: 'Folders doesn\'t exist',
+                    data: []
                 });
                 return;
             }
@@ -104,13 +85,22 @@ export class FolderController {
         }
     }
 
-    async createFolders(request: Request, response: Response, next: NextFunction) {
-        if(checkFoldersSchema(request.body,response)){
-            request.body.folderName = request.body.folderName.join('/');
-            return this.mkdir(request.body.folderName,'') ? response.status(201).json({
-                message: 'Folder(s) is created',
-            }) : undefined;
-        }
+    async createFolder(request: Request, response: Response, next: NextFunction) {
+        if(!checkFoldersSchema(request.body,response)){
+            return;
+        };
+        request.body.folderName = request.body.folderName.join('/');
+        const folder = new Folder();
+        folder.folderName = request.body.folderName;
+        folder.status = "Created";
+        folder.date = Date.now().toLocaleString();
+        let {id, folderName, status, date} = folder;
+        this.folderRepository.save(folder);
+        response.status(201).json({
+            message: 'Folder successfuly created',
+            folder: {id, folderName, status, date}
+        })
+        return;
     }
 
     async deleteFolder(request: Request, response: Response, next: NextFunction) {
@@ -180,6 +170,69 @@ export class FolderController {
         return 0;
     }
 
+    async paginateResources(request:Request, response: Response, arr: Array<any>){
+        let offsetObj = {offset: 0};
+        let limitObj = {limit: 0};
+        let filterObj = {type: ''};
+        offsetObj.offset = Number(request.query.offset);
+        limitObj.limit = Number(request.query.limit);
+        filterObj.type = request.query.type;
+        if(!checkLimit(limitObj,response)){
+            request.query.limit = undefined;
+        }
+        if(!checkOffset(offsetObj,response)){
+            request.query.offset = undefined;
+        }
+        if((request.query.offset == undefined) && ( request.query.limit == undefined)){
+            if(!checkFilterFile(filterObj,response)){
+                return ;
+            };
+            const folder = await this.folderRepository.findOne({id: request.params.foldersId});
+            const files = folder.files;
+            let filesArray = [];
+            for(let i = 0; i < files.length; i++){
+                if( files[i].type == request.query.type){
+                    filesArray.push(files[i]);
+                }
+            }
+            if( filesArray.length === 0){
+                response.status(404).json({
+                    message: 'Files with this type doesn\'t exist'
+                });
+                return ;
+            }
+            return filesArray.map(({id, fileName, status, type, date})=>({id, fileName, status, type, date}));
+        } else {
+            if(request.query.limit == undefined){
+                request.query.offset = Number(request.query.offset);
+                arr.splice(0,request.query.offset);
+                if( arr.length === 0){
+                    response.status(404).json({
+                        message: 'Resources doesn\'t exist'
+                    });
+                    return ; 
+                }
+                return arr;
+            }
+            if(request.query.offset == undefined){
+                request.query.limit = Number(request.query.limit);
+                arr = arr.slice(0,request.query.limit);
+                return arr;
+            };
+            request.query.offset = Number(request.query.offset);
+            request.query.limit = Number(request.query.limit);
+            arr.splice(0,request.query.offset);
+            arr = arr.slice(0,request.query.limit);
+            if( arr.length === 0){
+                response.status(404).json({
+                    message: 'Resources doesn\'t exist'
+                });
+                return ;
+            };
+            return arr;
+        };
+    }
+
     async readFolderResourse(request: Request, response: Response, next: NextFunction){
         let expanD ={expand: ''};
         let sort = {sortBy: ''};
@@ -191,72 +244,60 @@ export class FolderController {
             let arrFolderResources = [];
             let folder = await this.folderRepository.findOne({id : request.params.foldersId});
             if( folder !== undefined){
-                this.folderRepository.find()
-                    .then((folders) => {    
-                        folders.forEach((elem) => {
-                            if((elem.folderName.indexOf(folder.folderName) !== -1) && (elem.folderName.indexOf(folder.folderName) == 0)){
-                                let oldFolderLength = folder.folderName.split('/').length;
-                                let newFolderLength = elem.folderName.split('/').length;
-                                if((oldFolderLength + 1) === newFolderLength){
-                                    const {id, folderName, status, date} = elem;
-                                    arrFolderResources.push({id, folderName, status, date});
-                                }
-                            }
-                        });
-                        arrFolderResources = arrFolderResources.concat(folder.files);
-                        if( arrFolderResources.length == 0)
-                            response.status(404).json({
-                                message: 'Folder is empty'
-                            })
-                        else {
-                            if(request.query.sortBy !== undefined){
-                                let sign = request.query.sortBy.slice(0,1);
-                                sign === '+' ? arrFolderResources.sort(this.sortFunction) : arrFolderResources.sort(this.sortFunction).reverse();
-                            };
-                            response.status(200).json({
-                                message: 'Folders resources',
-                                data: arrFolderResources
-                            });
-                        }
+                let children = await this.folderTreeRepository.findDescendantsTree(folder);
+                if( (children.files.length === 0) && (children.childFolders.length === 0)){
+                    response.status(404).json({
+                        message: 'Children don\'t exsits'
                     });
+                    return;
+                };
+                const childFoldersArray = children.childFolders.map(({id, folderName, status, date}) => ({id, folderName, status, date}));
+                arrFolderResources = arrFolderResources.concat(childFoldersArray);
+                arrFolderResources = arrFolderResources.concat(children.files);
+                if(request.query.sortBy !== undefined){
+                    let sign = request.query.sortBy.slice(0,1);
+                    sign === '+' ? arrFolderResources.sort(this.sortFunction) : arrFolderResources.sort(this.sortFunction).reverse();
+                };
+                let arrayPaginateResources =  await this.paginateResources(request,response,arrFolderResources);
+                if(arrayPaginateResources !== undefined)
+                    arrFolderResources = arrayPaginateResources;
+                response.status(200).json({
+                    message: 'Folder resources',
+                    data: arrFolderResources
+                });
+                return;
             } else {
                 response.status(404).json({
                     message: 'Folder not found'
                 })
+                return;
             }
         } else {
             let arrFolderIDS = [];
             let folder = await this.folderRepository.findOne({id : request.params.foldersId});
             if( folder !== undefined){
-                this.folderRepository.find()
-                .then((folders) => {
-                    folders.forEach((elem) => {
-                        if((elem.folderName.indexOf(folder.folderName) !== -1) && (elem.folderName.indexOf(folder.folderName) == 0)){
-                            let oldFolderLength = folder.folderName.split('/').length;
-                            let newFolderLength = elem.folderName.split('/').length;
-                            if((oldFolderLength + 1) == newFolderLength){
-                                const {id, folderName, status, date} = elem;
-                                arrFolderIDS.push({id, folderName, status, date});
-                            }
-                        }
+                let children = await this.folderTreeRepository.findDescendantsTree(folder);
+                if( (children.files.length === 0) && (children.childFolders.length === 0)){
+                    response.status(404).json({
+                        message: 'Children don\'t exsits'
                     });
-                    arrFolderIDS = arrFolderIDS.concat(folder.files);
-                    if( arrFolderIDS.length === 0)
-                        response.status(404).json({
-                            message: 'Folder is empty'
-                        })
-                    else {
-                        if(request.query.sortBy !== undefined){
-                            let sign = request.query.sortBy.slice(0,1);
-                            sign === '+' ? arrFolderIDS.sort(this.sortFunction) : arrFolderIDS.sort(this.sortFunction).reverse();
-                        }
-                        arrFolderIDS = arrFolderIDS.map((elem) => elem.id);
-                        response.status(200).json({
-                            message: 'Folder of id\'s',
-                            data: arrFolderIDS
-                        })
-                    }
-                });
+                    return;
+                };
+                const childFoldersArray = children.childFolders.map(({id, folderName, status, date}) => ({id, folderName, status, date}));
+                arrFolderIDS = arrFolderIDS.concat(childFoldersArray);
+                arrFolderIDS = arrFolderIDS.concat(children.files);
+                if(request.query.sortBy !== undefined){
+                    let sign = request.query.sortBy.slice(0,1);
+                    sign === '+' ? arrFolderIDS.sort(this.sortFunction) : arrFolderIDS.sort(this.sortFunction).reverse();
+                }
+                let arrayPaginateResources =  await this.paginateResources(request,response,arrFolderIDS);
+                if(arrayPaginateResources !== undefined)
+                    arrFolderIDS = arrayPaginateResources;
+                arrFolderIDS = arrFolderIDS.map((elem) => elem.id);
+                response.status(200).json({
+                    message: 'Folder of id\'s',
+                    data: arrFolderIDS
+                })
             } else {
                 response.status(404).json({
                     message: 'Folder not found'
@@ -266,59 +307,15 @@ export class FolderController {
     }
 
     async renameFolder (request: Request, response: Response, next: NextFunction){
-        let flag = false;
         if(checkRenameFolder(request.body,response)){
             const folder = await this.folderRepository.findOne({id : request.params.foldersId});
             if ( folder !== undefined ) {
-                this.folderRepository.find()
-                .then(folders => {
-                    for(let elem of folders){
-                        if((elem.folderName.indexOf(folder.folderName) !== -1) && (elem.folderName.indexOf(folder.folderName) == 0)){
-                            let folderLength = elem.folderName.split('/').length;
-                            let requestLength = folder.folderName.split('/').length;
-                            if(folderLength == requestLength){
-                                let folderName = elem.folderName.split('/').slice();
-                                folderName.pop();
-                                folderName.push(request.body.folderName);
-                                if(!flag){
-                                    for(let elem1 of folders){
-                                        if((elem1.folderName.length === folderName.join('/').length ) && (elem1.folderName.indexOf(folderName.join('/')) == 0)){
-                                            response.status(403).json({
-                                                message: 'Folder with this name exist'
-                                            });
-                                            return;
-                                        }
-                                    }
-                                }
-                                flag = true;
-                                elem.folderName = folderName.join('/');
-                                this.folderRepository.save(elem);
-                            }
-                            if(folderLength > requestLength){
-                                let indexOldName = folder.folderName.split('/').length - 1;
-                                let arrFolders = elem.folderName.split('/').slice();
-                                arrFolders[indexOldName] = request.body.folderName;
-                                let tempArrFolder = arrFolders.slice(0,indexOldName + 1);
-                                if(!flag){
-                                    for(let elem1 of folders){
-                                        if((elem1.folderName.indexOf(tempArrFolder.join('/')) !== -1) && (elem1.folderName.indexOf(tempArrFolder.join('/')) == 0)){
-                                            response.status(403).json({
-                                                message: 'Folder with this name exist'
-                                            });
-                                            return;
-                                        }
-                                    }
-                                }
-                                flag = true;
-                                elem.folderName = arrFolders.join('/');
-                                this.folderRepository.save(elem);
-                            }
-                        }
-                    };
-                    response.status(200).json({
-                        message: 'Folder renamed'
-                    })
-                })
+                folder.folderName = request.body.folderName;
+                await this.folderRepository.save(folder);
+                response.status(200).json({
+                    message: 'Folder renamed'
+                });
+                return;
             } else {
                 response.status(404).json({
                     message: 'Folder not found'

@@ -1,6 +1,6 @@
 import {FoldersSchema, Expand, RenameFolder, Limit, Offset} from "../checks/CheckFolders";
 import {Request, Response} from "express";
-import {RenameFile, FilterFile, SortResources} from '../checks/CheckFile';
+import {RenameFile, FilterFile, SortResources,TypeResource} from '../checks/CheckFile';
 const Joi = require('joi');
 
 export function checkFoldersSchema (obj: Request, response: Response){
@@ -16,6 +16,19 @@ export function checkFoldersSchema (obj: Request, response: Response){
                 response.status(403).send({
                     message: 'Invalid request data',
                 });
+                return false;
+            }
+            return true;
+        })
+    }
+}
+
+export function checkType (obj: Request, response: Response){
+    if(!obj.hasOwnProperty('type')){
+        return false;
+    } else {
+        return Joi.validate(obj, TypeResource, (err, value) => {
+            if (err) {
                 return false;
             }
             return true;

@@ -1,8 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from "typeorm";
+import { Entity,Tree, Column, PrimaryGeneratedColumn, OneToMany,TreeChildren, TreeParent, TreeLevelColumn } from "typeorm";
 import { File } from "./File";
 import { type } from "os";
 
 @Entity()
+@Tree("nested-set")
 export class Folder {
 
     @PrimaryGeneratedColumn()
@@ -16,6 +17,12 @@ export class Folder {
 
     @Column()
     date: string;
+
+    @TreeParent()
+    parentFolder: Folder;
+
+    @TreeChildren({cascade:true })
+    childFolders: Folder[];
 
     @OneToMany(type => File, file => file.folder, {
         cascade: true,
