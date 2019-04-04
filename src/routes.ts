@@ -20,7 +20,7 @@ export const Routes = [{
     method: "post", 
     route: "/api/v1/folders",
     controller: FolderController,
-    action: "createFolders"
+    action: "createFolder"
 }, {
     method: "delete", 
     route: "/api/v1/folders/:foldersId",
@@ -33,32 +33,17 @@ export const Routes = [{
     action: 'renameFolder'
 }, {
     method: 'post',
-    route: '/api/v1/folders/:foldersId/files',
+    route: '/api/v1/folders/:foldersId/resources',
     controller: FileController,
-    action: 'createFile'
-}, {
-    method: 'get',
-    route: '/api/v1/folders/:foldersId/files',
-    controller: FileController,
-    action: 'readFiles'
-}, {
-    method: 'get',
-    route: '/api/v1/folders/:foldersId/files/:filesId',
-    controller: FileController,
-    action: 'readFile'
+    action: 'createResource'
 }, {
     method: 'delete',
-    route: '/api/v1/folders/:foldersId/files/:filesId',
+    route: '/api/v1/folders/:foldersId/resources/:resourcesId',
     controller: FileController,
-    action: 'deleteFile'
-}, {
-    method: 'delete',
-    route: '/api/v1/folders/:foldersId/files',
-    controller: FileController,
-    action: 'deleteFiles'
+    action: 'deleteResource'
 }, {
     method: 'put',
-    route: '/api/v1/folders/:foldersId/files/:filesId',
+    route: '/api/v1/folders/:foldersId/resources/:resourcesId',
     controller: FileController,
     action: 'renameFile'
 }];
