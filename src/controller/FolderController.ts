@@ -41,8 +41,9 @@ export class FolderController {
             request.query.offset = Number(request.query.offset);
             const folders =  await this.folderRepository.find({skip: request.query.offset});
             if( folders.length === 0){
-                response.status(404).json({
-                    message: 'Folders doesn\'t exist'
+                response.json({
+                    message: 'Folders doesn\'t exist',
+                    data: []
                 });
                 return;
             }
