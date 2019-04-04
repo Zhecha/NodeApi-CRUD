@@ -13,7 +13,7 @@ export function checkFoldersSchema (obj: Request, response: Response){
         obj.folderName = obj.folderName.split('/');
         return Joi.validate(obj, FoldersSchema, (err, value) => {
             if (err) {
-                response.status(403).send({
+                response.status(400).send({
                     message: 'Invalid request data',
                 });
                 return false;
@@ -98,7 +98,7 @@ export function checkRenameFolder(obj: Request, response: Response){
     } else {
         return Joi.validate(obj, RenameFolder, (err, value) => {
             if (err) {
-                response.status(403).send({
+                response.status(400).send({
                     message: 'Invalid request data',
                 });
                 return false;
@@ -117,7 +117,7 @@ export function checkRenameFile(obj: Request, response: Response){
     } else {
         return Joi.validate(obj, RenameFile, (err, value) => {
             if (err) {
-                response.status(403).send({
+                response.status(400).send({
                     message: 'Invalid request data',
                 });
                 return false;
