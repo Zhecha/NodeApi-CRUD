@@ -3,12 +3,11 @@ import {NextFunction, Request, Response} from "express";
 import {Folder} from "../entity/Folder";
 import * as fs from "fs";
 import * as path from "path";
-import {checkRenameFile, checkFilterFile,checkLimit,checkOffset,checkFoldersSchema, checkType} from '../checks/Validate';
+import {checkRenameFile, checkFilterFile,checkLimit,checkOffset,checkFoldersSchema, checkType,checkRenameFolder} from '../checks/Validate';
 import { File } from "../entity/File";
 const Joi = require('joi');
 var multer = require('multer');
 import {config} from "../../config/config";
-import { ClientResponse } from "http";
 
 
 
