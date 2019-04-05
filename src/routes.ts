@@ -45,5 +45,5 @@ export const Routes = [{
     method: 'put',
     route: '/api/v1/folders/:foldersId/resources/:resourcesId',
     controller: FileController,
-    action: 'renameFile'
+    action: 'renameResource'
 }];
