@@ -189,7 +189,7 @@ export class FileController {
         }
     }
 
-    async renameFile(request: Request, response: Response, next: NextFunction){
+    async renameFile(request: Request, response: Response){
         const folder = await this.folderRepository.findOne({id : request.params.foldersId});
         const file = await this.fileRepository.findOne({id: request.params.resourcesId});
         let files = folder.files;
@@ -240,6 +240,58 @@ export class FileController {
         } else {
             response.status(404).json({
                 message: 'File not found'
+            });
+            return;
+        }
+    }
+    
+    async renameFolder (request: Request, response: Response){
+        if(checkRenameFolder(request.body,response)){
+            const folder = await this.folderRepository.findOne({id : request.params.resourcesId});
+            if ( folder !== undefined ) {
+                folder.folderName = request.body.folderName;
+                await this.folderRepository.save(folder);
+                response.status(200).json({
+                    message: 'Folder renamed'
+                });
+                return;
+            } else {
+                response.status(404).json({
+                    message: 'Folder not found'
+                })
+            }
+        }
+
+    }
+
+    async renameResource(request: Request, response: Response, next:NextFunction){
+        let arrFolderChildren = [];
+        let folder = await this.folderRepository.findOne({id : request.params.foldersId});
+        if( folder !== undefined){
+            let children = await this.folderTreeRepository.findDescendantsTree(folder);
+            if( (children.files.length === 0) && (children.childFolders.length === 0)){
+                response.json({
+                    data: []
+                });
+                return;
+            };
+            const childFoldersArray = children.childFolders.map(({id, folderName, status, date, files, childFolders}) => ({id, folderName, status, date, files, childFolders}));
+            arrFolderChildren = arrFolderChildren.concat(childFoldersArray);
+            arrFolderChildren = arrFolderChildren.concat(children.files.map(({id, fileName, status,type, date}) => ({id, fileName, status,type , date})));
+            console.log(arrFolderChildren);
+            for (let child of arrFolderChildren){
+                if(child.id == request.params.resourcesId){
+                    return !child.type ? await this.renameFolder(request,response) : this.renameFile(request,response);
+                }
+            }
+            response.status(404).json({
+                message: "Resource doesn\'t exist"
+            });
+            return;
+
+        } else {
+            response.status(404).json({
+                message: 'Folder not found'
             });
             return;
         }
